@@ -40,17 +40,30 @@ namespace CaseApi.Migrations
                     b.Property<int>("Action")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("EntityId")
+                    b.Property<int>("CaseId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("EntityType")
+                    b.Property<string>("FieldName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FieldValue")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Fullname")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("CaseId");
 
                     b.ToTable("CaseAudits");
                 });
@@ -65,6 +78,13 @@ namespace CaseApi.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("ExtraA")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SomeIntValue")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
@@ -118,35 +138,54 @@ namespace CaseApi.Migrations
                     b.ToTable("CaseTypeCs");
                 });
 
+            modelBuilder.Entity("CaseAudit", b =>
+                {
+                    b.HasOne("Case", "Case")
+                        .WithMany("CaseAudit")
+                        .HasForeignKey("CaseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Case");
+                });
+
             modelBuilder.Entity("CaseTypeA", b =>
                 {
-                    b.HasOne("Case", null)
+                    b.HasOne("Case", "Case")
                         .WithOne("CaseTypeA")
                         .HasForeignKey("CaseTypeA", "CaseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Case");
                 });
 
             modelBuilder.Entity("CaseTypeB", b =>
                 {
-                    b.HasOne("Case", null)
+                    b.HasOne("Case", "Case")
                         .WithOne("CaseTypeB")
                         .HasForeignKey("CaseTypeB", "CaseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Case");
                 });
 
             modelBuilder.Entity("CaseTypeC", b =>
                 {
-                    b.HasOne("Case", null)
+                    b.HasOne("Case", "Case")
                         .WithOne("CaseTypeC")
                         .HasForeignKey("CaseTypeC", "CaseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Case");
                 });
 
             modelBuilder.Entity("Case", b =>
                 {
+                    b.Navigation("CaseAudit");
+
                     b.Navigation("CaseTypeA")
                         .IsRequired();
 

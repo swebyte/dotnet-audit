@@ -3,11 +3,15 @@ using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddDbContext<AppDbContext>(options => {
-    options.UseSqlite("Data Source=cases.db"); // Keep DbContext configuration simple
+builder.Services.AddScoped<AuditInterceptor>();
+
+builder.Services.AddDbContext<AppDbContext>((serviceProvider, options) => {
+    options.UseSqlite("Data Source=cases.db")
+           .AddInterceptors(serviceProvider.GetRequiredService<AuditInterceptor>());
 });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddScoped<IUserContextService, UserContextService>();
 
 // Configure JSON serialization to handle reference loops
 builder.Services.AddControllers().AddJsonOptions(opt =>
@@ -60,33 +64,49 @@ app.MapGet("/audits", async (AppDbContext db) => {
     return Results.Ok(audits);
 });
 
-app.MapPost("/casetypea", async (AppDbContext db, CaseTypeA newCaseTypeA) => {
+app.MapPost("/casetypea", async (AppDbContext db, CaseTypeA newCaseTypeA, string userid, string fullname, IUserContextService userContextService) => {
+    // Set user info in the UserContextService
+    userContextService.UserId = userid;
+    userContextService.Fullname = fullname;
+
     var newCase = new Case { Type = "A", CaseTypeA = newCaseTypeA };
     db.Cases.Add(newCase);
     await db.SaveChangesAsync();
     return Results.Created($"/casetypea/{newCase.CaseTypeA.Id}", newCase.CaseTypeA);
 });
 
-app.MapPut("/casetypea/{id}", async (AppDbContext db, int id, string newExtraA) => {
-    var caseTypeA = await db.CaseTypeAs.FindAsync(id);
+app.MapPut("/casetypea/{id}", async (AppDbContext db, int id, string newExtraA, string status, string userid, string fullname, IUserContextService userContextService) => {
+    // Set user info in the UserContextService
+    userContextService.UserId = userid;
+    userContextService.Fullname = fullname;
+
+    var caseTypeA = await db.CaseTypeAs.Include(c => c.Case).FirstOrDefaultAsync(c => c.CaseId == id);
     if (caseTypeA == null) {
         return Results.NotFound();
     }
 
     caseTypeA.ExtraA = newExtraA;
+    caseTypeA.Status = status;
     await db.SaveChangesAsync();
-    return Results.Ok(caseTypeA);
+    return Results.Ok(new CaseDtoA() { 
+        Id = caseTypeA.CaseId, 
+        ExtraA = caseTypeA.ExtraA 
+    });
 });
 
 app.Run();
 
 void SeedDatabase(AppDbContext db) {
     if (!db.Cases.Any()) {
-        var caseA = new Case { Type = "A", CaseTypeA = new CaseTypeA { ExtraA = "Extra Data A" } };
-        var caseB = new Case { Type = "B", CaseTypeB = new CaseTypeB { ExtraB = "Extra Data B" } };
-        var caseC = new Case { Type = "C", CaseTypeC = new CaseTypeC { ExtraC = "Extra Data C" } };
+        var cases = new List<Case>();
 
-        db.Cases.AddRange(caseA, caseB, caseC);
+        for (int i = 1; i <= 10; i++) {
+            cases.Add(new Case { Type = "A", CaseTypeA = new CaseTypeA { ExtraA = $"Extra Data A {i}", Status = "New" } });
+            cases.Add(new Case { Type = "B", CaseTypeB = new CaseTypeB { ExtraB = $"Extra Data B {i}" } });
+            cases.Add(new Case { Type = "C", CaseTypeC = new CaseTypeC { ExtraC = $"Extra Data C {i}" } });
+        }
+
+        db.Cases.AddRange(cases);
         db.SaveChanges();
     }
 }

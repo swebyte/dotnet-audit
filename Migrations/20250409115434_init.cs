@@ -1,11 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace CaseApi.Migrations
 {
     /// <inheritdoc />
-    public partial class initialcreate : Migration
+    public partial class init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -24,13 +25,40 @@ namespace CaseApi.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "CaseAudits",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    CaseId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Action = table.Column<int>(type: "INTEGER", nullable: false),
+                    Timestamp = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    FieldName = table.Column<string>(type: "TEXT", nullable: false),
+                    FieldValue = table.Column<string>(type: "TEXT", nullable: false),
+                    UserId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Fullname = table.Column<string>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CaseAudits", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CaseAudits_Cases_CaseId",
+                        column: x => x.CaseId,
+                        principalTable: "Cases",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "CaseTypeAs",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     CaseId = table.Column<int>(type: "INTEGER", nullable: false),
-                    ExtraA = table.Column<string>(type: "TEXT", nullable: false)
+                    ExtraA = table.Column<string>(type: "TEXT", nullable: false),
+                    Status = table.Column<string>(type: "TEXT", nullable: false),
+                    SomeIntValue = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -84,6 +112,11 @@ namespace CaseApi.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_CaseAudits_CaseId",
+                table: "CaseAudits",
+                column: "CaseId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_CaseTypeAs_CaseId",
                 table: "CaseTypeAs",
                 column: "CaseId",
@@ -105,6 +138,9 @@ namespace CaseApi.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "CaseAudits");
+
             migrationBuilder.DropTable(
                 name: "CaseTypeAs");
 

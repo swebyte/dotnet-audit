@@ -13,23 +13,28 @@ public class AppDbContext : DbContext {
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
         modelBuilder.Entity<Case>()
             .HasOne(c => c.CaseTypeA)
-            .WithOne()
+            .WithOne(cta => cta.Case)
             .HasForeignKey<CaseTypeA>(x => x.CaseId);
 
         modelBuilder.Entity<Case>()
             .HasOne(c => c.CaseTypeB)
-            .WithOne()
+            .WithOne(ctb => ctb.Case)
             .HasForeignKey<CaseTypeB>(x => x.CaseId);
 
         modelBuilder.Entity<Case>()
             .HasOne(c => c.CaseTypeC)
-            .WithOne()
+            .WithOne(ctc => ctc.Case)
             .HasForeignKey<CaseTypeC>(x => x.CaseId);
+
+        modelBuilder.Entity<Case>()
+            .HasMany(c => c.CaseAudit)
+            .WithOne(ca => ca.Case) 
+            .HasForeignKey(x => x.CaseId);
     }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
-        optionsBuilder.AddInterceptors(
-            new AuditInterceptor()
-        );
-    }
+    // protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
+    //     optionsBuilder.AddInterceptors(
+    //         new AuditInterceptor()
+    //     );
+    // }
 }
